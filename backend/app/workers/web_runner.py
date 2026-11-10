@@ -65,7 +65,7 @@ def run_web_case(definition: dict, ctx: RunContext, case_slug: str) -> dict:
     t0 = time.perf_counter()
     status, error = "passed", ""
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(headless=True)
+        browser = pw.chromium.launch(headless=True, args=["--no-sandbox"] if get_settings().chromium_no_sandbox else [])
         context = browser.new_context(viewport=definition.get("viewport", {"width": 1366, "height": 800}))
         context.route("**/*", route_guard)
         page = context.new_page()

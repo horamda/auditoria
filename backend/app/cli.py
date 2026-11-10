@@ -47,6 +47,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="qa-cli")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("seed-roles")
+    sub.add_parser("bootstrap-admin")
     ca = sub.add_parser("create-admin")
     ca.add_argument("--email", required=True)
     sp = sub.add_parser("seed-profiles")
@@ -56,7 +57,19 @@ def main(argv: list[str] | None = None) -> int:
 
     with SessionLocal() as db:
         seed_roles(db)
-        if args.cmd == "create-admin":
+        if args.cmd == "bootstrap-admin":
+            # Despliegue: crea el primer admin desde QA_ADMIN_EMAIL/QA_ADMIN_PASSWORD solo si no hay usuarios.
+            email, pwd = os.environ.get("QA_ADMIN_EMAIL", ""), os.environ.get("QA_ADMIN_PASSWORD", "")
+            if db.scalar(select(User.id).limit(1)):
+                print("bootstrap-admin: ya existen usuarios, no se hace nada")
+            elif not email or len(pwd) < 10:
+                print("bootstrap-admin: definir QA_ADMIN_EMAIL y QA_ADMIN_PASSWORD (min. 10 caracteres) para crear el primer admin")
+            else:
+                role = db.scalar(select(Role).where(Role.name == "admin"))
+                db.add(User(email=email.lower(), full_name="Administrador", password_hash=hash_password(pwd), role_id=role.id))
+                db.commit()
+                print(f"bootstrap-admin: administrador creado: {email.lower()}")
+        elif args.cmd == "create-admin":
             pwd = os.environ.get("QA_ADMIN_PASSWORD") or getpass.getpass("Contraseña: ")
             if len(pwd) < 10:
                 print("La contraseña debe tener al menos 10 caracteres", file=sys.stderr)

@@ -1,0 +1,12 @@
+.git
+.venv
+.env
+**/__pycache__
+**/node_modules
+frontend/dist
+frontend/tsconfig.tsbuildinfo
+backend/tests
+*.db
+artifacts
+reports
+docs

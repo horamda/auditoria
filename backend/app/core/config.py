@@ -6,6 +6,7 @@ import warnings
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parents[3]  # raíz del repo QA Control Center
@@ -31,6 +32,20 @@ class Settings(BaseSettings):
     max_run_timeout_s: int = 3600
     worker_threads: int = 4
     kill_switch: bool = False
+
+    # Carpeta con el frontend compilado (si existe, la API lo sirve en "/"). Vacío = no servir.
+    frontend_dist: str = ""
+    chromium_no_sandbox: bool = False  # solo dentro del contenedor (ya aislado); ver Dockerfile
+
+    @field_validator("database_url")
+    @classmethod
+    def _normalize_db_url(cls, v: str) -> str:
+        # Railway entrega mysql://...; SQLAlchemy necesita el driver explícito.
+        if v.startswith("mysql://"):
+            v = "mysql+pymysql://" + v[len("mysql://"):]
+        if v.startswith("mysql+pymysql://") and "charset=" not in v:
+            v += ("&" if "?" in v else "?") + "charset=utf8mb4"
+        return v
 
     @property
     def repo_roots(self) -> list[Path]:
