@@ -13,6 +13,8 @@ Un único servicio (imagen del `Dockerfile` raíz: API FastAPI + frontend compil
 | `QA_DATABASE_URL` | PostgreSQL: `${{Postgres.DATABASE_URL}}` (se normaliza a `postgresql+psycopg://`). MySQL: `${{MySQL.MYSQL_URL}}` (a `mysql+pymysql://`) |
 | `QA_ADMIN_EMAIL` / `QA_ADMIN_PASSWORD` | primer administrador (mín. 10 caracteres). Solo se crea si no hay usuarios; luego se puede borrar la variable de contraseña |
 | `QA_CORS_ORIGINS` | no hace falta: frontend y API comparten origen |
+| `QA_NOTIFY_WEBHOOK_URL` | (opcional) webhook https que recibe los avisos de fallo; ver `docs/AUTOMATIZACION.md` |
+| `QA_DEPLOY_HOOK_TOKEN` | (opcional) token del hook de deploy; sin él queda deshabilitado |
 | `QA_ADMIN_RESET` | `true` solo para recuperar acceso: reescribe la contraseña del admin con `QA_ADMIN_PASSWORD` en el próximo arranque; quitar ambas después |
 | `QA_FICHAYA_STG_USER` etc. | credenciales de cuentas de PRUEBA, solo si se definen escenarios |
 

@@ -239,3 +239,19 @@ class SystemFlag(Base):
     __tablename__ = "system_flags"
     key: Mapped[str] = mapped_column(String(60), primary_key=True)
     value: Mapped[str] = mapped_column(String(255))
+
+
+class Schedule(Base):
+    """Ejecución automática periódica de una suite sobre un entorno."""
+    __tablename__ = "schedules"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
+    suite_id: Mapped[int] = mapped_column(ForeignKey("test_suites.id", ondelete="CASCADE"))
+    environment_id: Mapped[int] = mapped_column(ForeignKey("environments.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(String(120), default="")
+    interval_minutes: Mapped[int] = mapped_column(Integer, default=60)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    next_run_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    last_run_id: Mapped[int | None] = mapped_column(Integer)
+    created_by: Mapped[str] = mapped_column(String(190), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

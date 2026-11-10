@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     worker_threads: int = 4
     kill_switch: bool = False
 
+    # Automatización
+    scheduler_enabled: bool = True
+    notify_webhook_url: str = ""  # JSON {"text","content"} (Slack/Discord); solo https
+    deploy_hook_token: str = ""  # vacío = hook de deploy deshabilitado
+
     # Carpeta con el frontend compilado (si existe, la API lo sirve en "/"). Vacío = no servir.
     frontend_dist: str = ""
     chromium_no_sandbox: bool = False  # solo dentro del contenedor (ya aislado); ver Dockerfile

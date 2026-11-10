@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, Env, Project, Run, Suite } from "../api";
 import SecurityTab from "./SecurityTab";
+import AutomationTab from "./AutomationTab";
 
 const TEMPLATES: Record<string, any> = {
   api: [{ name: "Health check", objective: "La API responde", severity: "high",
@@ -70,7 +71,7 @@ export default function ProjectDetail() {
   })(); };
 
   if (!p) return err ? <div className="alert">{err}</div> : <p className="muted">Cargando…</p>;
-  const tabs = ["entornos", "descubrimiento", "seguridad", "suites", "ejecutar", "historial"];
+  const tabs = ["entornos", "descubrimiento", "seguridad", "suites", "ejecutar", "automatización", "historial"];
   return (
     <>
       <h1>{p.name} <span className="muted" style={{ fontSize: 14 }}>{p.version && `v${p.version}`} · {p.framework}</span></h1>
@@ -153,6 +154,8 @@ export default function ProjectDetail() {
           <div className="row" style={{ marginTop: 12 }}><button disabled={busy}>Crear suite</button></div>
         </form>
       </>}
+
+      {tab === "automatización" && <AutomationTab projectId={id!} suites={suites} envs={envs} onChange={loadAll} />}
 
       {tab === "ejecutar" && <form className="card" onSubmit={startRun}>
         <div className="form">

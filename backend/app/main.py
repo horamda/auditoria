@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -7,12 +8,23 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api import auth, projects, runs
+from app.api import auth, automation, projects, runs
 from app.core.config import get_settings
+from app.services import scheduler
 
 settings = get_settings()
 
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    if settings.scheduler_enabled:
+        scheduler.start()
+    yield
+    scheduler.stop()
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="QA Control Center",
     version="0.1.0",
     description="Plataforma de análisis, pruebas y monitoreo de aplicaciones Flutter, paneles web, APIs y bases de datos.",
@@ -26,6 +38,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(projects.router)
 app.include_router(runs.router)
+app.include_router(automation.router)
 
 
 @app.get("/api/health", tags=["meta"])

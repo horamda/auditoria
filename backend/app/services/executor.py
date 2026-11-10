@@ -21,6 +21,7 @@ from app.core.security import redact
 from app.models import (
     DiscoveredFeature, Environment, PerformanceMetric, TestArtifact, TestResult, TestRun, TestSuite, utcnow,
 )
+from app.services.notifier import notify_run_finished
 from app.workers.android_runner import run_android_case
 from app.workers.api_runner import run_api_case
 from app.workers.base import Cancelled, RunContext
@@ -247,3 +248,4 @@ def _execute(run_id: int) -> None:
     finally:
         db.close()
         _cancel.pop(run_id, None)
+        notify_run_finished(run_id)
