@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Informe de ejecución #{{ run.id }} — {{ project.name }}</title>
+<style>
+  :root { --bg:#fff; --fg:#1b1f24; --muted:#5b6470; --line:#d9dee4; --ok:#1a7f37; --bad:#cf222e; --warn:#9a6700; --card:#f6f8fa; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1318; --fg:#e6edf3; --muted:#9aa4ae; --line:#2b333c; --ok:#3fb950; --bad:#f85149; --warn:#d29922; --card:#161b22; } }
+  body { font: 14px/1.5 system-ui, Segoe UI, sans-serif; background: var(--bg); color: var(--fg); margin: 0; padding: 24px 16px; }
+  main { max-width: 1100px; margin: auto; }
+  h1 { margin: 0 0 4px; font-size: 22px; } h2 { margin-top: 32px; font-size: 17px; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+  .muted { color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .card b { display: block; font-size: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; } th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .wrap { overflow-x: auto; }
+  .st { font-weight: 600; } .passed { color: var(--ok); } .failed, .error { color: var(--bad); } .blocked, .skipped, .cancelled { color: var(--warn); }
+  img { max-width: 100%; border: 1px solid var(--line); border-radius: 6px; margin: 6px 0; }
+  pre { white-space: pre-wrap; background: var(--card); padding: 10px; border-radius: 6px; font-size: 12px; max-height: 360px; overflow: auto; }
+  .tag { display:inline-block; font-size: 11px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); }
+</style>
+</head>
+<body><main>
+<h1>Informe de ejecución #{{ run.id }}</h1>
+<div class="muted">{{ project.name }} · versión {{ run.version_label or project.version or "s/d" }} · entorno {{ env.name if env else "?" }} ({{ env.kind if env else "?" }}) · suite {{ suite.name if suite else "?" }} ({{ run.kind }})</div>
+<div class="muted">Inicio {{ run.started_at or "-" }} · Fin {{ run.finished_at or "-" }} · Generado {{ generated_at.strftime("%Y-%m-%d %H:%M") }} UTC · Ejecutado por {{ run.triggered_by }}</div>
+
+<h2>Resumen (resultados medidos)</h2>
+<div class="grid">
+  <div class="card">Estado<b class="st {{ run.status }}">{{ run.status }}</b></div>
+  {% for k, label in [("total","Total"),("passed","Aprobadas"),("failed","Fallidas"),("error","Errores"),("blocked","Bloqueadas"),("skipped","Omitidas")] %}
+  <div class="card">{{ label }}<b>{{ run.summary.get(k, 0) }}</b></div>
+  {% endfor %}
+</div>
+
+<h2>Configuración</h2>
+<div class="wrap"><table>
+<tr><th>URL panel</th><td>{{ env.base_url if env else "" }}</td><th>URL API</th><td>{{ env.api_url if env else "" }}</td></tr>
+<tr><th>Hosts autorizados</th><td>{{ (env.allowed_hosts if env else [])|join(", ") }}</td><th>Escrituras</th><td>{{ "permitidas" if env and env.allow_writes and env.kind != "production" else "bloqueadas" }}</td></tr>
+<tr><th>Parámetros</th><td colspan="3"><code>{{ run.config }}</code></td></tr>
+</table></div>
+
+<h2>Resultados por prueba</h2>
+<div class="wrap"><table>
+<tr><th>Prueba</th><th>Resultado</th><th>Duración</th><th>Severidad</th><th>Error detectado</th><th>Recomendación</th></tr>
+{% for r in run.results %}
+<tr><td>{{ r.case_name }}</td><td class="st {{ r.status }}">{{ r.status }}</td><td>{{ "%.0f"|format(r.duration_ms) }} ms</td>
+<td>{{ r.severity }}</td><td>{{ r.error }}</td><td class="muted">{{ r.recommendation }}</td></tr>
+{% endfor %}
+</table></div>
+
+{% if metrics %}
+<h2>Métricas de rendimiento (medidas)</h2>
+<div class="wrap"><table>
+<tr><th>Operación</th><th>Solicitudes</th><th>Fallidas</th><th>Prom.</th><th>p50</th><th>p95</th><th>p99</th><th>RPS</th><th>Fallos/s</th></tr>
+{% for m in metrics %}
+<tr><td>{{ m.name }}</td><td>{{ m.requests }}</td><td>{{ m.failures }}</td><td>{{ "%.0f"|format(m.avg_ms) }} ms</td><td>{{ "%.0f"|format(m.p50_ms) }}</td><td>{{ "%.0f"|format(m.p95_ms) }}</td><td>{{ "%.0f"|format(m.p99_ms) }}</td><td>{{ "%.2f"|format(m.rps) }}</td><td>{{ "%.2f"|format(m.failures_per_s) }}</td></tr>
+{% endfor %}
+</table></div>
+{% endif %}
+
+{% if findings %}
+<h2>Hallazgos de seguridad ({{ findings|length }})</h2>
+<div class="wrap"><table>
+<tr><th>Severidad</th><th>Tipo</th><th>Hallazgo</th><th>Ubicación</th><th>Corrección</th><th>Herramientas</th></tr>
+{% for f in findings %}
+<tr><td class="st {{ 'failed' if f.severity in ('critical','high') else 'blocked' }}">{{ f.severity }}</td><td>{{ f.category }}</td>
+<td>{{ f.title }}{% if f.cwe %}<div class="muted">{{ f.cwe }}</div>{% endif %}</td>
+<td>{{ f.file }}{% if f.line %}:{{ f.line }}{% endif %}</td>
+<td>{{ f.fixed_version or "—" }}</td><td>{{ (f.details.tools or [f.tool])|join(", ") }}</td></tr>
+{% endfor %}
+</table></div>
+{% endif %}
+
+<h2>Evidencias</h2>
+{% for r in run.results %}
+  {% if images.get(r.id) or r.details %}
+  <h3>{{ r.case_name }} <span class="tag st {{ r.status }}">{{ r.status }}</span></h3>
+  {% for img in images.get(r.id, []) %}<img src="{{ img }}" alt="Captura {{ r.case_name }}">{% endfor %}
+  {% if r.details %}<pre>{{ r.details | tojson(indent=2) }}</pre>{% endif %}
+  {% endif %}
+{% else %}<p class="muted">Sin evidencias registradas.</p>{% endfor %}
+
+<h2>Log depurado</h2>
+<pre>{{ run.log }}</pre>
+
+<h2>Limitaciones de la ejecución</h2>
+<ul>{% for l in limitations %}<li>{{ l }}</li>{% endfor %}</ul>
+<p class="muted">Las recomendaciones son orientativas (no medidas). Que todas las pruebas ejecutadas aprueben no significa que la aplicación esté libre de errores.</p>
+</main></body></html>

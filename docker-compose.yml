@@ -1,0 +1,31 @@
+# Base de datos exclusiva de QA Control Center + API.
+# Uso: docker compose --env-file .env up -d mysql  (y luego la API local o el servicio api)
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: qa_control_center
+      MYSQL_USER: qacc
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?definir MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?definir MYSQL_ROOT_PASSWORD}
+    ports: ["127.0.0.1:3307:3306"]
+    volumes: [qacc_mysql:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 20
+  api:
+    build: { context: ./backend, dockerfile: ../infrastructure/backend.Dockerfile }
+    env_file: .env
+    environment:
+      QA_DATABASE_URL: mysql+pymysql://qacc:${MYSQL_PASSWORD}@mysql:3306/qa_control_center?charset=utf8mb4
+      QA_ARTIFACTS_DIR: /data/artifacts
+    volumes: [qacc_artifacts:/data/artifacts]
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on: { mysql: { condition: service_healthy } }
+    mem_limit: 2g
+    cpus: 2
+    profiles: ["full"]
+volumes:
+  qacc_mysql:
+  qacc_artifacts:

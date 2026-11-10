@@ -1,0 +1,10 @@
+{
+  "name": "Smoke API",
+  "kind": "api",
+  "cases": [
+    {"name": "Health", "severity": "high", "definition": {"method": "GET", "path": "/healthz", "expect_status": 200, "max_ms": 2000}},
+    {"name": "Login rechaza credenciales inválidas", "severity": "high",
+     "definition": {"method": "POST", "path": "/api/auth/login", "json": {"username": "no-existe", "password": "x"},
+                    "expect_status": [400, 401, 403], "approved_write": true}}
+  ]
+}
