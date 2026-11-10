@@ -60,7 +60,18 @@ def main(argv: list[str] | None = None) -> int:
         if args.cmd == "bootstrap-admin":
             # Despliegue: crea el primer admin desde QA_ADMIN_EMAIL/QA_ADMIN_PASSWORD solo si no hay usuarios.
             email, pwd = os.environ.get("QA_ADMIN_EMAIL", ""), os.environ.get("QA_ADMIN_PASSWORD", "")
-            if db.scalar(select(User.id).limit(1)):
+            reset = os.environ.get("QA_ADMIN_RESET", "").lower() in ("1", "true", "yes")
+            if reset and email and len(pwd) >= 10:
+                # Recuperación: reescribe la contraseña del admin. Quitar QA_ADMIN_RESET y QA_ADMIN_PASSWORD después.
+                role = db.scalar(select(Role).where(Role.name == "admin"))
+                user = db.scalar(select(User).where(User.email == email.lower()))
+                if user:
+                    user.password_hash, user.role_id, user.is_active = hash_password(pwd), role.id, True
+                else:
+                    db.add(User(email=email.lower(), full_name="Administrador", password_hash=hash_password(pwd), role_id=role.id))
+                db.commit()
+                print(f"bootstrap-admin: contrasena reiniciada para {email.lower()} (quitar QA_ADMIN_RESET y QA_ADMIN_PASSWORD)")
+            elif db.scalar(select(User.id).limit(1)):
                 print("bootstrap-admin: ya existen usuarios, no se hace nada")
             elif not email or len(pwd) < 10:
                 print("bootstrap-admin: definir QA_ADMIN_EMAIL y QA_ADMIN_PASSWORD (min. 10 caracteres) para crear el primer admin")

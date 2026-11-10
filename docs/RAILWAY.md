@@ -13,6 +13,7 @@ Un único servicio (imagen del `Dockerfile` raíz: API FastAPI + frontend compil
 | `QA_DATABASE_URL` | PostgreSQL: `${{Postgres.DATABASE_URL}}` (se normaliza a `postgresql+psycopg://`). MySQL: `${{MySQL.MYSQL_URL}}` (a `mysql+pymysql://`) |
 | `QA_ADMIN_EMAIL` / `QA_ADMIN_PASSWORD` | primer administrador (mín. 10 caracteres). Solo se crea si no hay usuarios; luego se puede borrar la variable de contraseña |
 | `QA_CORS_ORIGINS` | no hace falta: frontend y API comparten origen |
+| `QA_ADMIN_RESET` | `true` solo para recuperar acceso: reescribe la contraseña del admin con `QA_ADMIN_PASSWORD` en el próximo arranque; quitar ambas después |
 | `QA_FICHAYA_STG_USER` etc. | credenciales de cuentas de PRUEBA, solo si se definen escenarios |
 
 4. (Recomendado) **Volume** montado en `/data` y variable `RAILWAY_RUN_UID=0` (los volúmenes montan como root) para que capturas e informes sobrevivan a los redeploys. Sin volumen funciona, pero se pierden al redeployar.
