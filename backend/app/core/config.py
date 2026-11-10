@@ -43,6 +43,10 @@ class Settings(BaseSettings):
         # Railway entrega mysql://...; SQLAlchemy necesita el driver explícito.
         if v.startswith("mysql://"):
             v = "mysql+pymysql://" + v[len("mysql://"):]
+        # Railway/Heroku entregan postgres:// o postgresql://; se usa el driver psycopg 3.
+        for prefix in ("postgres://", "postgresql://"):
+            if v.startswith(prefix):
+                v = "postgresql+psycopg://" + v[len(prefix):]
         if v.startswith("mysql+pymysql://") and "charset=" not in v:
             v += ("&" if "?" in v else "?") + "charset=utf8mb4"
         return v
